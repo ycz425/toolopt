@@ -1,0 +1,9 @@
+pydantic
+dotenv
+google-genai
+transformers
+torch
+accelerate
+datasets
+peft
+bitsandbytes
