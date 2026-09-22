@@ -1,4 +1,4 @@
-from app.agents.policy import Policy
+from app.agents.base import Policy
 from app.environment.environment import Environment
 from app.environment.task import Task
 from datetime import datetime

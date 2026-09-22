@@ -1,9 +1,14 @@
 import dotenv
 from google import genai
+from abc import ABC, abstractmethod
 from typing import TypeVar
 import os
 from pydantic import BaseModel, ValidationError
 from datetime import datetime
+
+from app.environment.state import Action, State
+from app.environment.task import Task
+from app.tools.base import ToolMetadata
 
 dotenv.load_dotenv()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -11,7 +16,15 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 T = TypeVar("T", bound=BaseModel)
 
 
-class LLMAgent:
+class Policy(ABC):
+    @abstractmethod
+    async def select_action(
+        self, task: Task, tools: list[ToolMetadata], state: State, temperature: float = 0
+    ) -> Action:
+        ...
+
+
+class GeminiAgent:
     def __init__(self, model: str = "gemini-3.1-flash-lite", verbose: bool = False):
         self.client = genai.Client(api_key=GEMINI_API_KEY)
         self.model = model

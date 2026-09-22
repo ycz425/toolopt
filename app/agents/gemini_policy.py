@@ -1,6 +1,6 @@
 import json
 
-from app.agents.base import LLMAgent
+from app.agents.base import GeminiAgent, Policy
 from app.environment.task import Task
 from app.tools.base import ToolMetadata
 from app.environment.state import State, Action
@@ -40,8 +40,8 @@ def build_prompt(task: Task, tools: list[ToolMetadata], state: State) -> str:
     )
 
 
-class Policy(LLMAgent):
-    label = 'policy'
+class GeminiPolicy(GeminiAgent, Policy):
+    label = 'gemini_policy'
     async def select_action(self, task: Task, tools: list[ToolMetadata], state: State, temperature: float = 0) -> Action:
         if self.verbose:
             print(f'{datetime.now()}     Selecting action...')
@@ -49,5 +49,5 @@ class Policy(LLMAgent):
             prompt=build_prompt(task, tools, state),
             schema=Action,
             label=self.label,
-            temperature=temperature,
+            temperature=temperature
         )

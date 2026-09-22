@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from app.agents.base import LLMAgent
+from app.agents.base import GeminiAgent
 from app.environment.task import Task
 
 
@@ -7,7 +7,7 @@ class JudgeResult(BaseModel):
     correct: bool = Field(description="Whether the answer correctly addresses the task.")
     reasoning: str = Field(description="Brief explanation for the verdict.")
 
-class Judge(LLMAgent):
+class Judge(GeminiAgent):
     async def judge(self, task: Task, expected_answer: str, actual_answer: str) -> JudgeResult:
         prompt = (
             f"Task: {task.description}\n"
