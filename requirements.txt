@@ -7,3 +7,4 @@ accelerate
 datasets
 peft
 bitsandbytes
+tensorboard

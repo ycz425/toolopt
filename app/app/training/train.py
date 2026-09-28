@@ -1,7 +1,3 @@
-import math
-import os
-
-import torch
 from transformers import DataCollatorForSeq2Seq, Trainer, TrainingArguments
 
 from app.data.dataset import build_dataset
@@ -10,7 +6,7 @@ from app.training.lora import load_model, load_tokenizer
 from app.training.tokenization import tokenized_dataset
 
 
-def get_training_args(config: LoRATrainingConfig, warmup_steps: int) -> TrainingArguments:
+def get_training_args(config: LoRATrainingConfig) -> TrainingArguments:
     return TrainingArguments(
         output_dir=config.output_dir,
         seed=config.seed,
@@ -19,10 +15,8 @@ def get_training_args(config: LoRATrainingConfig, warmup_steps: int) -> Training
         per_device_train_batch_size=config.batch_size,
         per_device_eval_batch_size=config.batch_size,
         gradient_accumulation_steps=config.gradient_accumulation_steps,
-        gradient_checkpointing=config.gradient_checkpointing,
         learning_rate=config.learning_rate,
-        max_grad_norm=config.max_grad_norm,
-        warmup_steps=warmup_steps,
+        warmup_ratio=config.warmup_ratio,
         optim=config.optim,
         weight_decay=config.weight_decay,
 
@@ -30,7 +24,6 @@ def get_training_args(config: LoRATrainingConfig, warmup_steps: int) -> Training
 
         eval_strategy=config.eval_strategy,
         save_strategy=config.save_strategy,
-        save_total_limit=config.save_total_limit,
         load_best_model_at_end=config.load_best_model_at_end,
         metric_for_best_model=config.metric_for_best_model,
 
@@ -41,39 +34,27 @@ def get_training_args(config: LoRATrainingConfig, warmup_steps: int) -> Training
 
 
 def main():
-    config = LoRATrainingConfig(
-        num_epochs=15,
-        load_best_model_at_end=True,
-        batch_size=2,
-        gradient_accumulation_steps=16,
-    )
+    config = LoRATrainingConfig()
 
     model = load_model(config=config)
     tokenizer = load_tokenizer(config=config)
 
-    examples = build_dataset("datasets/trajectories/trajectories.jsonl")
-    dataset = tokenized_dataset(examples, tokenizer, config.max_seq_length)
+    examples = build_dataset("/Users/ycz425/Desktop/projects/toolopt/datasets/trajectories/trajectories.jsonl")
+    dataset = tokenized_dataset(examples, tokenizer)
 
     split_dataset = dataset.train_test_split(test_size=0.1, seed=config.seed)
     train_dataset = split_dataset["train"]
     eval_dataset = split_dataset["test"]
 
-    steps_per_epoch = math.ceil(len(train_dataset) / (config.batch_size * config.gradient_accumulation_steps))
-    total_steps = steps_per_epoch * config.num_epochs
-    warmup_steps = round(config.warmup_ratio * total_steps)
-
     trainer = Trainer(
         model,
-        args=get_training_args(config, warmup_steps),
+        args=get_training_args(config),
         data_collator=DataCollatorForSeq2Seq(tokenizer, model, padding=True, label_pad_token_id=-100),
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
     )
 
     trainer.train()
-
-    trainer.save_model(config.output_dir)
-    tokenizer.save_pretrained(config.output_dir)
 
 
 if __name__ == "__main__":

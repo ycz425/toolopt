@@ -21,17 +21,12 @@ class LoRATrainingConfig(BaseModel):
         description="Names of the weight matrices LoRA adapters attach to (Qwen2/Qwen2.5 attention projections).",
     )
 
-    attn_implementation: str = Field(
-        default="eager", description="Attention kernel passed to from_pretrained: 'sdpa', 'eager', or 'flash_attention_2'."
-    )
-
     use_4bit: bool = Field(
         default=False,
         description="Load the base model in 4-bit (QLoRA) instead of bf16. Enable for constrained local hardware.",
     )
 
-    learning_rate: float = Field(default=1e-4, description="Peak learning rate for the LoRA parameters.")
-    max_grad_norm: float = Field(default=1.0, description="Gradient clipping threshold.")
+    learning_rate: float = Field(default=2e-4, description="Learning rate for the LoRA parameters.")
     num_epochs: int = Field(default=3, description="Number of passes over the training data.")
     batch_size: int = Field(default=8, description="Per-device training batch size.")
     gradient_accumulation_steps: int = Field(
@@ -40,12 +35,7 @@ class LoRATrainingConfig(BaseModel):
     max_seq_length: int = Field(
         default=2048, description="Maximum tokenized sequence length; longer prompts are truncated."
     )
-    gradient_checkpointing: bool = Field(
-        default=True,
-        description="Recompute activations during the backward pass instead of storing them, trading "
-        "~20-30% more compute time for substantially lower GPU memory use.",
-    )
-    warmup_ratio: float = Field(default=0.1, description="Fraction of total steps used for learning-rate warmup.")
+    warmup_ratio: float = Field(default=0.03, description="Fraction of total steps used for learning-rate warmup.")
     optim: str = Field(default="adamw_torch_fused", description="Optimizer used for training.")
     weight_decay: float = Field(default=0.01, description="Weight decay applied by the optimizer.")
 
@@ -64,11 +54,6 @@ class LoRATrainingConfig(BaseModel):
     save_strategy: str = Field(
         default="epoch",
         description="When to save checkpoints. Must be compatible with eval_strategy for load_best_model_at_end to work.",
-    )
-    save_total_limit: int = Field(
-        default=3,
-        description="Maximum number of checkpoints to keep on disk at once (oldest are deleted first, "
-        "but the current best is always kept when load_best_model_at_end=True).",
     )
     load_best_model_at_end: bool = Field(
         default=True,

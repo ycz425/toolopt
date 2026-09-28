@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, ValidationError
 
 from app.agents.agent import Agent
 from app.environment.state import Action
@@ -24,17 +26,37 @@ class BenchmarkResult(BaseModel):
 
 async def run_benchmark(agent: Agent, cases: list[BenchmarkCase]) -> list[BenchmarkResult]:
     results = []
-    for case in cases:
-        state = await agent.run(case.task)
-        results.append(BenchmarkResult(
-            task_id=case.task.task_id,
-            success=await task_success(state, case.expected_answer),
-            tool_selection_accuracy=tool_selection_accuracy(state, case.expected_actions),
-            argument_accuracy=argument_accuracy(state, case.expected_actions),
-            num_tool_calls=num_tool_calls(state),
-            total_latency=total_latency(state),
-            total_cost=total_cost(state),
-        ))
+    for i, case in enumerate(cases, start=1):
+        try:
+            state = await agent.run(case.task)
+            result = BenchmarkResult(
+                task_id=case.task.task_id,
+                success=await task_success(state, case.expected_answer),
+                tool_selection_accuracy=tool_selection_accuracy(state, case.expected_actions),
+                argument_accuracy=argument_accuracy(state, case.expected_actions),
+                num_tool_calls=num_tool_calls(state),
+                total_latency=total_latency(state),
+                total_cost=total_cost(state),
+            )
+            status = "success" if result.success else "failed"
+        except ValidationError:
+            # The policy exhausted its retries without producing a schema-valid action --
+            # an expected failure mode for an imperfect (e.g. zero-shot) model, not a bug.
+            # Record it as a failed case instead of killing the whole benchmark run.
+            result = BenchmarkResult(
+                task_id=case.task.task_id,
+                success=False,
+                tool_selection_accuracy=0.0,
+                argument_accuracy=0.0,
+                num_tool_calls=0,
+                total_latency=0.0,
+                total_cost=0.0,
+            )
+            status = "failed (never produced a valid action)"
+
+        results.append(result)
+        print(f"{datetime.now()}     [{i}/{len(cases)}] {case.task.task_id}: {status}")
+
     return results
 
 

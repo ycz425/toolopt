@@ -6,9 +6,8 @@ from app.environment.state import State
 from app.training.prompting import build_completion, build_system_prompt, build_user_prompt
 
 
-def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedTokenizerBase, max_seq_length: int) -> Dataset:
+def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedTokenizerBase) -> Dataset:
     rows = []
-    skipped = 0
     for example in examples:
         state = State(task=example.task, available_tools=example.available_tools, history=example.history)
         system_prompt = build_system_prompt(example.available_tools)
@@ -22,7 +21,7 @@ def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedToke
             ],
             tokenize=True,
             add_generation_prompt=False
-        )['input_ids']
+        )
 
         prompt_ids = tokenizer.apply_chat_template(
             [
@@ -31,19 +30,12 @@ def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedToke
             ],
             tokenize=True,
             add_generation_prompt=True
-        )['input_ids']
-
-        if len(full_ids) > max_seq_length:
-            skipped += 1
-            continue
+        )
 
         rows.append({
             'input_ids': full_ids,
             'labels': [-100] * len(prompt_ids) + full_ids[len(prompt_ids):],
             'attention_mask': [1] * len(full_ids),
         })
-
-    if skipped:
-        print(f"Skipped {skipped}/{len(examples)} examples exceeding max_seq_length={max_seq_length}")
 
     return Dataset.from_list(rows)
