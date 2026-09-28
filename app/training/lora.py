@@ -19,9 +19,6 @@ def apply_lora(model, config: LoRATrainingConfig):
     )
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
-
-    model.enable_input_require_grads()
-
     return model
 
 
@@ -34,12 +31,10 @@ def load_model(config: LoRATrainingConfig):
         )
         model = AutoModelForCausalLM.from_pretrained(
             config.base_model, quantization_config=quantization_config, device_map="auto",
-            attn_implementation=config.attn_implementation,
         )
     else:
         model = AutoModelForCausalLM.from_pretrained(
-            config.base_model, dtype=torch.bfloat16, device_map="auto",
-            attn_implementation=config.attn_implementation,
+            config.base_model, torch_dtype=torch.bfloat16, device_map="auto",
         )
     return apply_lora(model, config)
 
