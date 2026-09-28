@@ -21,6 +21,12 @@ class LoRATrainingConfig(BaseModel):
         description="Names of the weight matrices LoRA adapters attach to (Qwen2/Qwen2.5 attention projections).",
     )
 
+    attn_implementation: str = Field(
+        default="eager",
+        description="Attention kernel passed to from_pretrained: 'sdpa', 'eager', or 'flash_attention_2'. Defaults to "
+        "eager because sdpa's backward pass produces NaN gradients on Trillium's torch 2.14 / CUDA 13.2 build.",
+    )
+
     use_4bit: bool = Field(
         default=False,
         description="Load the base model in 4-bit (QLoRA) instead of bf16. Enable for constrained local hardware.",

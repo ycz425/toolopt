@@ -34,12 +34,3 @@ def load_trajectories(path: str | Path) -> list[Trajectory]:
             if line:
                 trajectories.append(Trajectory.model_validate_json(line))
     return trajectories
-
-
-def build_dataset(path: str | Path, include_failed: bool = False) -> list[TrainingExample]:
-    examples = []
-    for trajectory in load_trajectories(path):
-        if not trajectory.success and not include_failed:
-            continue
-        examples.extend(trajectory_to_examples(trajectory))
-    return examples

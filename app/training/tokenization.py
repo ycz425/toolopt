@@ -21,7 +21,7 @@ def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedToke
             ],
             tokenize=True,
             add_generation_prompt=False
-        )
+        )['input_ids']
 
         prompt_ids = tokenizer.apply_chat_template(
             [
@@ -30,7 +30,7 @@ def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedToke
             ],
             tokenize=True,
             add_generation_prompt=True
-        )
+        )['input_ids']
 
         rows.append({
             'input_ids': full_ids,
