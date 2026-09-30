@@ -54,7 +54,13 @@ def main():
 
     dataset_dir = resolve_version_dir(args.dataset)
     run_dir = RUNS_ROOT / f"{datetime.now():%Y-%m-%d_%H%M%S}_{dataset_dir.name}"
-    config = LoRATrainingConfig(output_dir=str(run_dir))
+    config = LoRATrainingConfig(
+        output_dir=str(run_dir),
+        num_epochs=3,
+        batch_size=2,
+        gradient_accumulation_steps=16,
+        attn_implementation='eager'
+    )
     print(f"Training on {dataset_dir}; writing run to {run_dir}")
 
     model = load_model(config=config)

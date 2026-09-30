@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Literal, Any
 
 
-type ParamType = Literal[
+ParamType = Literal[
     "string",
     "integer",
     "number",

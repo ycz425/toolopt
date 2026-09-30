@@ -32,6 +32,8 @@ def _value_matches(actual, expected, tol: float = 1e-6) -> bool:
 async def task_success(state: State, expected_answer: str) -> bool:
     if not state.history or state.history[-1].action.tool_name != "finish":
         return False
+    if not state.history[-1].result.success:
+        return False  # finish was called with invalid arguments (e.g. no "answer"), so there is no answer to judge
 
     actual_answer = state.history[-1].result.output["answer"]
     result = await _get_judge().judge(state.task, expected_answer, actual_answer)
