@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class FinishResult(BaseModel):
@@ -11,6 +11,7 @@ class FinishTool(Tool):
     metadata = ToolMetadata(
         name="finish",
         description="Call this when you have completed the task, with your final answer.",
+        pricing=ToolPricing(base=0.0),
         parameters=[
             ToolParameter(
                 name="answer",
@@ -23,6 +24,3 @@ class FinishTool(Tool):
 
     def execute(self, answer: str) -> FinishResult:
         return FinishResult(answer=answer)
-
-    def cost(self, answer: str) -> float:
-        return 0.0

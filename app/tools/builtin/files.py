@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class VirtualFileSystem:
@@ -23,6 +23,7 @@ class FileReadTool(Tool):
     metadata = ToolMetadata(
         name="file_read",
         description="Read the contents of a file.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="path", type="string", description="Path of the file to read."),
         ],
@@ -37,9 +38,6 @@ class FileReadTool(Tool):
             raise ValueError(f"file '{path}' does not exist")
         return ReadFileResult(path=path, content=self.fs.files[path])
 
-    def cost(self, path: str) -> float:
-        return 0.01
-
     def reset(self) -> None:
         self.fs.reset()
 
@@ -53,6 +51,7 @@ class FileWriteTool(Tool):
     metadata = ToolMetadata(
         name="file_write",
         description="Write content to a file, creating it if it doesn't exist or overwriting it if it does.",
+        pricing=ToolPricing(base=0.02),
         parameters=[
             ToolParameter(name="path", type="string", description="Path of the file to write."),
             ToolParameter(name="content", type="string", description="Content to write to the file."),
@@ -67,8 +66,28 @@ class FileWriteTool(Tool):
         self.fs.files[path] = content
         return WriteFileResult(path=path, bytes_written=len(content))
 
-    def cost(self, path: str, content: str) -> float:
-        return 0.02
+    def reset(self) -> None:
+        self.fs.reset()
+
+
+class FileWriteVerifiedTool(Tool):
+    metadata = ToolMetadata(
+        name="file_write_verified",
+        description="Write content to a file (creating or overwriting it), then read it back and return what was stored.",
+        pricing=ToolPricing(base=0.025),
+        parameters=[
+            ToolParameter(name="path", type="string", description="Path of the file to write."),
+            ToolParameter(name="content", type="string", description="Content to write to the file."),
+        ],
+        returns=ReadFileResult.__name__,
+    )
+
+    def __init__(self, fs: VirtualFileSystem):
+        self.fs = fs
+
+    def execute(self, path: str, content: str) -> ReadFileResult:
+        self.fs.files[path] = content
+        return ReadFileResult(path=path, content=self.fs.files[path])
 
     def reset(self) -> None:
         self.fs.reset()

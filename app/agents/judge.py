@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from app.agents.base import GeminiAgent
+from app.agents.gemini import GeminiAgent
 from app.environment.task import Task
 
 

@@ -50,10 +50,13 @@ def write_run_info(run_dir: Path, info: dict) -> None:
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune a LoRA adapter on a dataset version's trajectories.")
     parser.add_argument("--dataset", help="Dataset version to train on, e.g. v2 (default: the latest)")
+    parser.add_argument("--demos", choices=["random", "cheapest"], default="random",
+                        help="random: one random valid path per task (cost-unaware SFT, the default); "
+                             "cheapest: the cheapest path per task (the reference model)")
     args = parser.parse_args()
 
     dataset_dir = resolve_version_dir(args.dataset)
-    run_dir = RUNS_ROOT / f"{datetime.now():%Y-%m-%d_%H%M%S}_{dataset_dir.name}"
+    run_dir = RUNS_ROOT / f"{datetime.now():%Y-%m-%d_%H%M%S}_{dataset_dir.name}{'_cheapest' if args.demos == 'cheapest' else ''}"
     config = LoRATrainingConfig(
         output_dir=str(run_dir),
         num_epochs=3,
@@ -66,8 +69,9 @@ def main():
     model = load_model(config=config)
     tokenizer = load_tokenizer(config=config)
 
-    train_trajectories = [t for t in load_trajectories(dataset_dir / "train_trajectories.jsonl") if t.success]
-    val_trajectories = [t for t in load_trajectories(dataset_dir / "val_trajectories.jsonl") if t.success]
+    suffix = "_cheapest" if args.demos == "cheapest" else ""
+    train_trajectories = [t for t in load_trajectories(dataset_dir / f"sft_train{suffix}_trajectories.jsonl") if t.success]
+    val_trajectories = [t for t in load_trajectories(dataset_dir / f"val{suffix}_trajectories.jsonl") if t.success]
     train_dataset = tokenized_dataset([e for t in train_trajectories for e in trajectory_to_examples(t)], tokenizer)
     eval_dataset = tokenized_dataset([e for t in val_trajectories for e in trajectory_to_examples(t)], tokenizer)
 
@@ -76,6 +80,7 @@ def main():
         "run": run_dir.name,
         "dataset_version": dataset_dir.name,
         "dataset_dir": str(dataset_dir),
+        "demos": args.demos,
         "dataset_manifest": json.loads(manifest_path.read_text()) if manifest_path.exists() else None,
         "started": datetime.now().isoformat(timespec="seconds"),
         "finished": None,

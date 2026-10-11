@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class WordCountResult(BaseModel):
@@ -12,6 +12,7 @@ class WordCountTool(Tool):
     metadata = ToolMetadata(
         name="word_count",
         description="Count the words and characters in a piece of text.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="text", type="string", description="The text to analyze."),
         ],
@@ -20,6 +21,3 @@ class WordCountTool(Tool):
 
     def execute(self, text: str) -> WordCountResult:
         return WordCountResult(words=len(text.split()), characters=len(text))
-
-    def cost(self, text: str) -> float:
-        return 0.01

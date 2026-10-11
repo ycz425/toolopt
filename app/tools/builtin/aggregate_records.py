@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class GroupResult(BaseModel):
@@ -20,6 +20,7 @@ class AggregateRecordsTool(Tool):
             "Group a list of records by category and sum a numeric value within each group. "
             "Each record is an object with 'category' (string) and 'value' (number) fields."
         ),
+        pricing=ToolPricing(base=0.02),
         parameters=[
             ToolParameter(
                 name="records",
@@ -39,6 +40,3 @@ class AggregateRecordsTool(Tool):
             counts[key] = counts.get(key, 0) + 1
         groups = [GroupResult(group=k, total=round(totals[k], 2), count=counts[k]) for k in sorted(totals)]
         return AggregateRecordsResult(groups=groups)
-
-    def cost(self, records: list[dict]) -> float:
-        return 0.02

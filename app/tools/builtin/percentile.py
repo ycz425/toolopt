@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class PercentileResult(BaseModel):
@@ -24,6 +24,7 @@ class PercentileTool(Tool):
     metadata = ToolMetadata(
         name="percentile",
         description="Compute the Nth percentile of a list of numbers.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="numbers", type="array", description="List of numbers."),
             ToolParameter(name="p", type="number", description="Percentile to compute, e.g. 90 for the 90th percentile."),
@@ -33,6 +34,3 @@ class PercentileTool(Tool):
 
     def execute(self, numbers: list[float], p: float) -> PercentileResult:
         return PercentileResult(value=round(compute_percentile(numbers, p), 2))
-
-    def cost(self, numbers: list[float], p: float) -> float:
-        return 0.01

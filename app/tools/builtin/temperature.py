@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class TemperatureResult(BaseModel):
@@ -37,6 +37,7 @@ class TemperatureConverterTool(Tool):
     metadata = ToolMetadata(
         name="temperature_converter",
         description="Convert a temperature between Celsius, Fahrenheit, and Kelvin.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="value", type="number", description="The temperature value to convert."),
             ToolParameter(name="from_unit", type="string", description="One of 'celsius', 'fahrenheit', 'kelvin'."),
@@ -52,6 +53,3 @@ class TemperatureConverterTool(Tool):
             to_unit=to_unit,
             converted_value=round(convert_temperature(value, from_unit, to_unit), 2),
         )
-
-    def cost(self, value: float, from_unit: str, to_unit: str) -> float:
-        return 0.01

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class CalendarEvent(BaseModel):
@@ -28,6 +28,7 @@ class CalendarListTool(Tool):
     metadata = ToolMetadata(
         name="calendar_list",
         description="List all events currently on the calendar.",
+        pricing=ToolPricing(base=0.01),
         parameters=[],
         returns=ListEventsResult.__name__,
     )
@@ -37,9 +38,6 @@ class CalendarListTool(Tool):
 
     def execute(self) -> ListEventsResult:
         return ListEventsResult(events=list(self.store.events))
-
-    def cost(self) -> float:
-        return 0.01
 
     def reset(self) -> None:
         self.store.reset()
@@ -53,6 +51,7 @@ class CalendarCreateTool(Tool):
     metadata = ToolMetadata(
         name="calendar_create",
         description="Create a new event on the calendar.",
+        pricing=ToolPricing(base=0.02),
         parameters=[
             ToolParameter(name="time", type="string", description="Event time, e.g. '2024-05-01 14:00'."),
             ToolParameter(name="title", type="string", description="Short title of the event."),
@@ -68,8 +67,34 @@ class CalendarCreateTool(Tool):
         self.store.events.append(event)
         return CreateEventResult(event=event)
 
-    def cost(self, time: str, title: str) -> float:
-        return 0.02
+    def reset(self) -> None:
+        self.store.reset()
+
+
+class CreateEventVerifiedResult(BaseModel):
+    event: CalendarEvent = Field(description="The event that was created.")
+    events: list[CalendarEvent] = Field(description="All events on the calendar after the event was created.")
+
+
+class CalendarCreateVerifiedTool(Tool):
+    metadata = ToolMetadata(
+        name="calendar_create_verified",
+        description="Create a new event on the calendar, then return the full calendar so you can confirm it was added.",
+        pricing=ToolPricing(base=0.025),
+        parameters=[
+            ToolParameter(name="time", type="string", description="Event time, e.g. '2024-05-01 14:00'."),
+            ToolParameter(name="title", type="string", description="Short title of the event."),
+        ],
+        returns=CreateEventVerifiedResult.__name__,
+    )
+
+    def __init__(self, store: CalendarStore):
+        self.store = store
+
+    def execute(self, time: str, title: str) -> CreateEventVerifiedResult:
+        event = CalendarEvent(time=time, title=title)
+        self.store.events.append(event)
+        return CreateEventVerifiedResult(event=event, events=list(self.store.events))
 
     def reset(self) -> None:
         self.store.reset()

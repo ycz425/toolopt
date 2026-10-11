@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class CompoundInterestResult(BaseModel):
@@ -14,6 +14,7 @@ class CompoundInterestTool(Tool):
     metadata = ToolMetadata(
         name="compound_interest",
         description="Compute the final amount after annual compound interest is applied.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="principal", type="number", description="The initial amount."),
             ToolParameter(name="rate_pct", type="number", description="Annual interest rate as a percentage, e.g. 5 for 5%."),
@@ -27,6 +28,3 @@ class CompoundInterestTool(Tool):
         return CompoundInterestResult(
             principal=principal, rate_pct=rate_pct, years=years, final_amount=round(final_amount, 2)
         )
-
-    def cost(self, principal: float, rate_pct: float, years: int) -> float:
-        return 0.01

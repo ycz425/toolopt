@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class FilterRecordsResult(BaseModel):
@@ -14,6 +14,7 @@ class FilterRecordsTool(Tool):
             "Filter a list of records down to only those meeting a minimum score. Each record is an "
             "object with a 'name' (string) and 'score' (number) field."
         ),
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(
                 name="records",
@@ -28,6 +29,3 @@ class FilterRecordsTool(Tool):
     def execute(self, records: list[dict], threshold: float) -> FilterRecordsResult:
         matching = [r for r in records if r.get("score", float("-inf")) >= threshold]
         return FilterRecordsResult(matching=matching)
-
-    def cost(self, records: list[dict], threshold: float) -> float:
-        return 0.01

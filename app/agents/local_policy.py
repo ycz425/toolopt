@@ -7,7 +7,7 @@ from app.agents.base import Policy
 from app.environment.state import Action, State
 from app.environment.task import Task
 from app.tools.base import ToolMetadata
-from app.training.prompting import build_system_prompt, build_user_prompt
+from app.agents.prompting import build_system_prompt, build_user_prompt
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTALL)
 

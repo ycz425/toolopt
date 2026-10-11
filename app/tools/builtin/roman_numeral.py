@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 _VALUES = [
     (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
@@ -17,6 +17,7 @@ class RomanNumeralTool(Tool):
     metadata = ToolMetadata(
         name="roman_numeral",
         description="Convert an integer between 1 and 3999 to a Roman numeral.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="value", type="integer", description="Integer between 1 and 3999."),
         ],
@@ -33,6 +34,3 @@ class RomanNumeralTool(Tool):
                 result += symbol
                 value -= amount
         return RomanResult(roman=result)
-
-    def cost(self, value: int) -> float:
-        return 0.01

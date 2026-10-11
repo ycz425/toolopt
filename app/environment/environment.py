@@ -1,7 +1,7 @@
 from app.environment.state import State, Action, Step
 from app.environment.task import Task
 from app.tools.registry import ToolRegistry
-from app.tools.base import ToolMetadata
+from app.tools.base import ToolMetadata, ToolPricing
 from app.tools.executor import ToolExecutionResult, ToolExecutor
 
 class Environment:
@@ -23,7 +23,7 @@ class Environment:
             # A model can name a tool that doesn't exist. Record it as a failed call, like a tool that
             # raised, so the agent sees the error in its history and can recover instead of crashing.
             result = ToolExecutionResult(
-                metadata=ToolMetadata(name=action.tool_name, description="Unknown tool.", parameters=[], returns="None"),
+                metadata=ToolMetadata(name=action.tool_name, description="Unknown tool.", pricing=ToolPricing(base=0.0), parameters=[], returns="None"),
                 args=action.args,
                 latency=0.0,
                 success=False,

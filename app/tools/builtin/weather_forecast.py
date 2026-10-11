@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 from app.tools.builtin.weather import _WEATHER_DATA
 
 _CONDITIONS_CYCLE = ["sunny", "cloudy", "rainy", "partly cloudy", "windy"]
@@ -25,6 +25,7 @@ class WeatherForecastTool(Tool):
     metadata = ToolMetadata(
         name="weather_forecast",
         description="Get a multi-day weather forecast for a city -- more detailed (and costlier) than the basic weather tool, which only gives current conditions.",
+        pricing=ToolPricing(base=0.06),
         parameters=[
             ToolParameter(name="city", type="string", description="City name, e.g. 'Toronto'."),
             ToolParameter(name="days", type="integer", description="Number of days to forecast (1-5)."),
@@ -48,6 +49,3 @@ class WeatherForecastTool(Tool):
             for d in range(1, days + 1)
         ]
         return WeatherForecastResult(city=base.city, forecast=forecast)
-
-    def cost(self, city: str, days: int) -> float:
-        return 0.06

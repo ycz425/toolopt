@@ -1,31 +1,10 @@
-import json
-
-from app.agents.base import GeminiAgent, Policy
+from app.agents.base import Policy
+from app.agents.gemini import GeminiAgent
+from app.agents.prompting import format_history, format_tools
 from app.environment.task import Task
 from app.tools.base import ToolMetadata
 from app.environment.state import State, Action
 from datetime import datetime
-
-
-def format_tools(tools: list[ToolMetadata]) -> str:
-    lines = []
-    for tool in tools:
-        params = ", ".join(f"{p.name} ({p.type}): {p.description}" for p in tool.parameters)
-        lines.append(f"- {tool.name}: {tool.description}\n  parameters: {params or '(none)'}")
-    return "\n".join(lines)
-
-
-def format_history(state: State) -> str:
-    if not state.history:
-        return "(no actions taken yet)"
-    lines = []
-    for i, step in enumerate(state.history, start=1):
-        if step.result.success:
-            outcome = f"succeeded -> {json.dumps(step.result.output)}"
-        else:
-            outcome = f"failed -> {step.result.error}"
-        lines.append(f"{i}. called {step.action.tool_name}({step.action.args}) - {outcome}")
-    return "\n".join(lines)
 
 
 def build_prompt(task: Task, tools: list[ToolMetadata], state: State) -> str:

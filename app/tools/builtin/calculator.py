@@ -3,7 +3,7 @@ import operator
 
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class CalculatorResult(BaseModel):
@@ -40,6 +40,7 @@ class CalculatorTool(Tool):
     metadata = ToolMetadata(
         name="calculator",
         description="Evaluates a basic arithmetic expression (+, -, *, /, **, parentheses) and returns the numeric result.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(
                 name="expression",
@@ -52,6 +53,3 @@ class CalculatorTool(Tool):
 
     def execute(self, expression: str) -> CalculatorResult:
         return CalculatorResult(result=safe_eval(expression))
-
-    def cost(self, expression: str) -> float:
-        return 0.01

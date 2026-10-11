@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class ConversionResult(BaseModel):
@@ -49,6 +49,7 @@ class ConverterTool(Tool):
     metadata = ToolMetadata(
         name="converter",
         description="Convert a numeric value between units or currencies (e.g. km to miles, USD to EUR).",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="value", type="number", description="The numeric value to convert."),
             ToolParameter(name="from_unit", type="string", description="The unit to convert from, e.g. 'km', 'usd'."),
@@ -65,5 +66,25 @@ class ConverterTool(Tool):
             converted_value=value * _rate(from_unit, to_unit),
         )
 
-    def cost(self, value: float, from_unit: str, to_unit: str) -> float:
-        return 0.01
+
+CURRENCIES = frozenset({"usd", "eur", "gbp", "jpy", "cad", "aud", "chf", "inr", "cny", "mxn"})
+
+
+class CurrencyConverterTool(Tool):
+    metadata = ToolMetadata(
+        name="currency_converter",
+        description=f"Convert an amount between currencies only ({', '.join(sorted(CURRENCIES))}). Does not convert physical units.",
+        pricing=ToolPricing(base=0.004),
+        parameters=[
+            ToolParameter(name="value", type="number", description="The amount to convert."),
+            ToolParameter(name="from_unit", type="string", description="The currency to convert from, e.g. 'usd'."),
+            ToolParameter(name="to_unit", type="string", description="The currency to convert to, e.g. 'eur'."),
+        ],
+        returns=ConversionResult.__name__,
+    )
+
+    def execute(self, value: float, from_unit: str, to_unit: str) -> ConversionResult:
+        for unit in (from_unit, to_unit):
+            if unit.strip().lower() not in CURRENCIES:
+                raise ValueError(f"currency_converter only converts currencies; '{unit}' is not a supported currency")
+        return ConverterTool().execute(value, from_unit, to_unit)

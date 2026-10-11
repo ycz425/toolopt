@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class DateDiffResult(BaseModel):
@@ -13,6 +13,7 @@ class DateDiffTool(Tool):
     metadata = ToolMetadata(
         name="date_diff",
         description="Compute the number of days between two dates.",
+        pricing=ToolPricing(base=0.01),
         parameters=[
             ToolParameter(name="date1", type="string", description="First date, in YYYY-MM-DD format."),
             ToolParameter(name="date2", type="string", description="Second date, in YYYY-MM-DD format."),
@@ -23,6 +24,3 @@ class DateDiffTool(Tool):
     def execute(self, date1: str, date2: str) -> DateDiffResult:
         d1, d2 = date.fromisoformat(date1), date.fromisoformat(date2)
         return DateDiffResult(days=(d2 - d1).days)
-
-    def cost(self, date1: str, date2: str) -> float:
-        return 0.01

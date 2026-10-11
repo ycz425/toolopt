@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class WeatherResult(BaseModel):
@@ -119,6 +119,7 @@ class WeatherTool(Tool):
     metadata = ToolMetadata(
         name="weather",
         description="Look up current weather for a city.",
+        pricing=ToolPricing(base=0.02),
         parameters=[
             ToolParameter(
                 name="city",
@@ -135,5 +136,23 @@ class WeatherTool(Tool):
             raise ValueError(f"no weather data available for '{city}'")
         return result
 
-    def cost(self, city: str) -> float:
-        return 0.02
+
+class WeatherBatchResult(BaseModel):
+    results: list[WeatherResult] = Field(description="Current weather for each requested city, in the order given.")
+
+
+class WeatherBatchTool(Tool):
+    metadata = ToolMetadata(
+        name="weather_batch",
+        description="Look up current weather for several cities in one call.",
+        pricing=ToolPricing(base=0.01, per_unit=0.012, unit_param="cities"),
+        parameters=[
+            ToolParameter(name="cities", type="array", description="City names, e.g. ['Toronto', 'Paris']."),
+        ],
+        returns=WeatherBatchResult.__name__,
+    )
+
+    def execute(self, cities: list[str]) -> WeatherBatchResult:
+        if not cities:
+            raise ValueError("cities must not be empty")
+        return WeatherBatchResult(results=[WeatherTool().execute(city) for city in cities])

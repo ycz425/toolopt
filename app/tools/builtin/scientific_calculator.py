@@ -4,7 +4,7 @@ import operator
 
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class ScientificCalculatorResult(BaseModel):
@@ -57,6 +57,7 @@ class ScientificCalculatorTool(Tool):
             "(sqrt, sin, cos, tan, log, log10, exp) in addition to basic operators -- "
             "more powerful (and costlier) than the basic calculator."
         ),
+        pricing=ToolPricing(base=0.03),
         parameters=[
             ToolParameter(name="expression", type="string", description="A math expression, e.g. 'sqrt(16) + 3'."),
         ],
@@ -65,6 +66,3 @@ class ScientificCalculatorTool(Tool):
 
     def execute(self, expression: str) -> ScientificCalculatorResult:
         return ScientificCalculatorResult(result=round(scientific_eval(expression), 6))
-
-    def cost(self, expression: str) -> float:
-        return 0.03

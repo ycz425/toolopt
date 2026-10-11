@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from app.tools.base import Tool, ToolMetadata, ToolParameter
+from app.tools.base import Tool, ToolMetadata, ToolParameter, ToolPricing
 
 
 class StockPriceResult(BaseModel):
@@ -116,6 +116,7 @@ class StockPriceTool(Tool):
     metadata = ToolMetadata(
         name="stock_price",
         description="Look up the current price of a stock by ticker symbol.",
+        pricing=ToolPricing(base=0.02),
         parameters=[
             ToolParameter(name="ticker", type="string", description="Stock ticker symbol, e.g. 'AAPL'."),
         ],
@@ -128,5 +129,23 @@ class StockPriceTool(Tool):
             raise ValueError(f"no price data available for ticker '{ticker}'")
         return StockPriceResult(ticker=ticker.upper(), price=price)
 
-    def cost(self, ticker: str) -> float:
-        return 0.02
+
+class StockPricesResult(BaseModel):
+    results: list[StockPriceResult] = Field(description="The current price of each requested ticker, in the order given.")
+
+
+class StockPricesTool(Tool):
+    metadata = ToolMetadata(
+        name="stock_prices",
+        description="Look up the current prices of several stocks in one call.",
+        pricing=ToolPricing(base=0.01, per_unit=0.012, unit_param="tickers"),
+        parameters=[
+            ToolParameter(name="tickers", type="array", description="Stock ticker symbols, e.g. ['AAPL', 'MSFT']."),
+        ],
+        returns=StockPricesResult.__name__,
+    )
+
+    def execute(self, tickers: list[str]) -> StockPricesResult:
+        if not tickers:
+            raise ValueError("tickers must not be empty")
+        return StockPricesResult(results=[StockPriceTool().execute(ticker) for ticker in tickers])

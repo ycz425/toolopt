@@ -3,7 +3,12 @@ from transformers import PreTrainedTokenizerBase
 
 from app.data.dataset import TrainingExample
 from app.environment.state import State
-from app.training.prompting import build_completion, build_system_prompt, build_user_prompt
+from app.agents.prompting import build_system_prompt, build_user_prompt
+
+
+def build_completion(example: TrainingExample) -> str:
+    """The training target for one step: the action the model should output, as JSON."""
+    return example.target_action.model_dump_json()
 
 
 def tokenized_dataset(examples: list[TrainingExample], tokenizer: PreTrainedTokenizerBase) -> Dataset:
