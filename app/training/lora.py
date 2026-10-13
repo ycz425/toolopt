@@ -1,5 +1,5 @@
 import torch
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, PreTrainedTokenizerBase
 
 from app.training.config import LoRATrainingConfig
@@ -39,6 +39,21 @@ def load_model(config: LoRATrainingConfig):
             attn_implementation=config.attn_implementation,
         )
     return apply_lora(model, config)
+
+
+def load_trained_adapter(config: LoRATrainingConfig, adapter_dir: str, trainable: bool):
+    """The base model with an already-trained LoRA adapter (e.g. an SFT run's), loaded under PEFT's default adapter
+    name. With trainable=True its LoRA weights can be trained further, as DPO does."""
+    base = AutoModelForCausalLM.from_pretrained(
+        config.base_model, torch_dtype=torch.bfloat16, device_map="auto",
+        attn_implementation=config.attn_implementation,
+    )
+    model = PeftModel.from_pretrained(base, adapter_dir, is_trainable=trainable)
+    if trainable:
+        # Needed for gradient checkpointing with a frozen base model (see train_sft).
+        model.enable_input_require_grads()
+    model.print_trainable_parameters()
+    return model
 
 
 def load_tokenizer(config: LoRATrainingConfig) -> PreTrainedTokenizerBase:

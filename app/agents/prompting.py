@@ -63,5 +63,10 @@ def build_system_prompt(available_tools: list[ToolMetadata]) -> str:
     )
 
 
+def format_action(action: Action) -> str:
+    """The text the model outputs for one step: the action as JSON. Used for SFT targets and DPO responses."""
+    return action.model_dump_json()
+
+
 def build_user_prompt(task: Task, state: State) -> str:
     return f"Task: {task.description}\n\nSteps taken so far:\n{format_history(state)}"

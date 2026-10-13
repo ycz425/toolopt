@@ -1,4 +1,5 @@
 from typing import Literal
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -21,3 +22,13 @@ class PreferencePair(BaseModel):
     rejected: Action
     chosen_path_cost: float = Field(description="Total cost of the full path the chosen action belongs to.")
     rejected_path_cost: float = Field(description="Total cost of the full path the rejected action belongs to.")
+
+
+def load_preference_pairs(path: str | Path) -> list[PreferencePair]:
+    preference_pairs = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                preference_pairs.append(PreferencePair.model_validate_json(line))
+    return preference_pairs

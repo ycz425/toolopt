@@ -76,3 +76,40 @@ class LoRATrainingConfig(BaseModel):
     report_to: str = Field(
         default="tensorboard", description="Experiment tracking integration ('none', 'wandb', 'tensorboard', ...)."
     )
+
+
+class DPOTrainingConfig(BaseModel):
+    """Settings for DPO on top of an SFT run. The model itself (base model, attention, precision, LoRA shape) is not
+    configured here: it comes from the SFT run being trained, so the two always match."""
+
+    beta: float = Field(
+        default=0.1, description="How strongly DPO keeps the policy close to the reference (the SFT model): lower lets it drift further."
+    )
+    sft_loss_weight: float = Field(
+        default=0.2,
+        description="Weight of an SFT (NLL) loss on the chosen responses, added to the DPO loss. Keeps the chosen action "
+        "likely in absolute terms, not just relative to the rejected one. 0 disables it.",
+    )
+    learning_rate: float = Field(default=5e-6, description="Learning rate for the LoRA parameters (DPO uses far lower rates than SFT).")
+    num_epochs: int = Field(default=2, description="Passes over the preference pairs.")
+    batch_size: int = Field(default=1, description="Pairs per device per step (each pair is a chosen and a rejected sequence).")
+    gradient_accumulation_steps: int = Field(default=16, description="Steps to accumulate gradients over before an optimizer step.")
+    warmup_ratio: float = Field(default=0.1, description="Fraction of total steps used for learning-rate warmup.")
+    max_length: int | None = Field(
+        default=3200,
+        description="Maximum prompt + response length in tokens. Must exceed the longest example (~3,000), or TRL "
+        "truncates the response away or drops the example.",
+    )
+    gradient_checkpointing: bool = Field(
+        default=True, description="Recompute activations in the backward pass to fit long chosen + rejected sequences in memory."
+    )
+    optim: str = Field(default="adamw_torch_fused", description="Optimizer used for training.")
+    weight_decay: float = Field(default=0.0, description="Weight decay applied by the optimizer.")
+    seed: int = Field(default=42, description="Random seed for reproducibility.")
+    bf16: bool = Field(default=True, description="Train in bf16 precision.")
+    eval_strategy: str = Field(default="epoch", description="When to evaluate on the validation pairs.")
+    save_strategy: str = Field(default="epoch", description="When to save checkpoints (must match eval_strategy for load_best_model_at_end).")
+    load_best_model_at_end: bool = Field(default=True, description="Keep the checkpoint with the best validation metric.")
+    metric_for_best_model: str = Field(default="eval_loss", description="Metric used to pick the best checkpoint.")
+    logging_steps: int = Field(default=10, description="How often (in steps) to log training metrics.")
+    report_to: str = Field(default="tensorboard", description="Experiment tracking integration.")

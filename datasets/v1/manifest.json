@@ -1,122 +1,376 @@
 {
   "version": "v1",
-  "created": "2026-09-28T19:11:50",
-  "val_size": 0.1,
-  "test_size": 0.2,
-  "split_seed": 42,
+  "created": "2026-10-10T22:10:35",
+  "seed": 42,
+  "split_fractions": {
+    "test": 0.2,
+    "val": 0.05,
+    "dpo_train": 0.3
+  },
+  "sft_p_optimal": null,
+  "dpo": {
+    "min_cost_gap": 0.001,
+    "max_pairs_per_task": 3,
+    "heldout_tools": [
+      "send_email",
+      "send_short_email"
+    ],
+    "templates_without_dpo_share": [
+      "add_days",
+      "aggregate_records",
+      "base64_decode",
+      "base64_encode",
+      "compound_interest",
+      "date_diff",
+      "encode_decode_roundtrip",
+      "filter_records",
+      "percentile",
+      "roman_numeral",
+      "temperature_converter",
+      "weather_forecast",
+      "word_count"
+    ]
+  },
   "counts": {
-    "train_tasks": 3512,
-    "val_tasks": 503,
-    "test_tasks": 1005,
-    "train_trajectories": 3512,
-    "val_trajectories": 503,
-    "failed_trajectories": 0
+    "sft_train_tasks": 3757,
+    "dpo_train_tasks": 1996,
+    "val_tasks": 386,
+    "test_tasks": 1541,
+    "tasks_with_alternative_paths": 5802,
+    "tasks_with_invalid_paths": 1728,
+    "dpo_pairs": {
+      "cost": 2234,
+      "correctness": 586
+    },
+    "dpo_val_pairs": {
+      "cost": 375,
+      "correctness": 93
+    }
+  },
+  "sft_demos": {
+    "optimal_fraction": 0.5906308224647325,
+    "avg_cost": 0.03642187915890338,
+    "avg_excess_cost": 0.005217194570135746
   },
   "tasks_per_template": {
-    "train": {
-      "add_days": 70,
-      "aggregate_records": 70,
-      "base64_decode": 70,
-      "base64_encode": 70,
-      "calculator": 140,
-      "calendar_create": 105,
-      "compound_interest": 84,
-      "convert_sum_prime": 105,
-      "convert_then_prime": 106,
-      "converter": 105,
-      "date_diff": 70,
-      "distance_between": 71,
-      "email": 104,
-      "encode_decode_roundtrip": 105,
-      "file_write_read": 101,
-      "filter_records": 70,
-      "mix_k2": 280,
-      "mix_k3": 280,
-      "mix_k4": 245,
-      "mix_k5": 210,
-      "percentile": 70,
-      "prime_checker": 84,
-      "roman_numeral": 69,
-      "scientific_calculator": 86,
-      "stats": 84,
-      "stats_prime_roman": 105,
-      "stock_price": 67,
-      "temperature_converter": 84,
-      "weather": 74,
-      "weather_compare": 70,
-      "weather_forecast": 70,
-      "weather_stock_email": 105,
-      "word_count": 83
+    "sft_train": {
+      "add_days": 60,
+      "aggregate_records": 60,
+      "base64_decode": 60,
+      "base64_encode": 60,
+      "calculator": 90,
+      "calendar_add": 45,
+      "calendar_create": 88,
+      "compound_interest": 60,
+      "convert_sum_prime": 67,
+      "convert_then_prime": 67,
+      "converter": 67,
+      "currency_email": 54,
+      "date_diff": 60,
+      "distance_between": 54,
+      "distance_compare": 67,
+      "distance_trip_total": 69,
+      "email": 67,
+      "encode_decode_roundtrip": 60,
+      "file_write": 47,
+      "file_write_read": 89,
+      "filter_records": 60,
+      "hypotenuse": 54,
+      "mix_k2": 180,
+      "mix_k3": 180,
+      "mix_k4": 157,
+      "mix_k5": 135,
+      "note_and_schedule": 54,
+      "percentile": 60,
+      "prime_checker": 54,
+      "prime_multi": 67,
+      "roman_numeral": 60,
+      "scientific_calculator": 52,
+      "stats": 36,
+      "stats_compare": 45,
+      "stats_multi": 247,
+      "stats_prime_roman": 67,
+      "stock_average": 67,
+      "stock_compare": 67,
+      "stock_multi": 134,
+      "stock_portfolio_value": 67,
+      "stock_price": 44,
+      "temperature_converter": 60,
+      "weather": 43,
+      "weather_compare": 54,
+      "weather_forecast": 60,
+      "weather_multi": 113,
+      "weather_rain_check": 54,
+      "weather_stock_email": 67,
+      "weather_warmest": 67,
+      "word_count": 61
+    },
+    "dpo_train": {
+      "calculator": 60,
+      "calendar_add": 30,
+      "calendar_create": 62,
+      "convert_sum_prime": 45,
+      "convert_then_prime": 45,
+      "converter": 45,
+      "currency_email": 36,
+      "distance_between": 34,
+      "distance_compare": 45,
+      "distance_trip_total": 44,
+      "email": 45,
+      "file_write": 29,
+      "file_write_read": 54,
+      "hypotenuse": 37,
+      "mix_k2": 120,
+      "mix_k3": 120,
+      "mix_k4": 105,
+      "mix_k5": 90,
+      "note_and_schedule": 36,
+      "prime_checker": 36,
+      "prime_multi": 45,
+      "scientific_calculator": 41,
+      "stats": 24,
+      "stats_compare": 30,
+      "stats_multi": 165,
+      "stats_prime_roman": 45,
+      "stock_average": 45,
+      "stock_compare": 45,
+      "stock_multi": 90,
+      "stock_portfolio_value": 45,
+      "stock_price": 34,
+      "weather": 32,
+      "weather_compare": 36,
+      "weather_multi": 75,
+      "weather_rain_check": 36,
+      "weather_stock_email": 45,
+      "weather_warmest": 45
     },
     "val": {
-      "add_days": 10,
-      "aggregate_records": 10,
-      "base64_decode": 10,
-      "base64_encode": 10,
-      "calculator": 20,
-      "calendar_create": 15,
-      "compound_interest": 12,
-      "convert_sum_prime": 15,
-      "convert_then_prime": 14,
-      "converter": 15,
-      "date_diff": 10,
-      "distance_between": 11,
-      "email": 17,
-      "encode_decode_roundtrip": 15,
-      "file_write_read": 15,
-      "filter_records": 10,
-      "mix_k2": 40,
-      "mix_k3": 40,
-      "mix_k4": 35,
-      "mix_k5": 30,
-      "percentile": 10,
-      "prime_checker": 12,
-      "roman_numeral": 11,
-      "scientific_calculator": 10,
-      "stats": 12,
-      "stats_prime_roman": 15,
-      "stock_price": 11,
-      "temperature_converter": 12,
-      "weather": 10,
-      "weather_compare": 10,
-      "weather_forecast": 9,
-      "weather_stock_email": 15,
-      "word_count": 12
+      "add_days": 4,
+      "aggregate_records": 4,
+      "base64_decode": 4,
+      "base64_encode": 4,
+      "calculator": 10,
+      "calendar_add": 5,
+      "calendar_create": 10,
+      "compound_interest": 4,
+      "convert_sum_prime": 8,
+      "convert_then_prime": 7,
+      "converter": 8,
+      "currency_email": 6,
+      "date_diff": 4,
+      "distance_between": 8,
+      "distance_compare": 8,
+      "distance_trip_total": 7,
+      "email": 8,
+      "encode_decode_roundtrip": 4,
+      "file_write": 4,
+      "file_write_read": 9,
+      "filter_records": 4,
+      "hypotenuse": 6,
+      "mix_k2": 20,
+      "mix_k3": 20,
+      "mix_k4": 18,
+      "mix_k5": 15,
+      "note_and_schedule": 6,
+      "percentile": 4,
+      "prime_checker": 6,
+      "prime_multi": 8,
+      "roman_numeral": 4,
+      "scientific_calculator": 6,
+      "stats": 4,
+      "stats_compare": 5,
+      "stats_multi": 28,
+      "stats_prime_roman": 8,
+      "stock_average": 8,
+      "stock_compare": 8,
+      "stock_multi": 15,
+      "stock_portfolio_value": 8,
+      "stock_price": 4,
+      "temperature_converter": 4,
+      "weather": 3,
+      "weather_compare": 6,
+      "weather_forecast": 4,
+      "weather_multi": 12,
+      "weather_rain_check": 6,
+      "weather_stock_email": 8,
+      "weather_warmest": 8,
+      "word_count": 4
     },
     "test": {
-      "add_days": 20,
-      "aggregate_records": 20,
-      "base64_decode": 20,
-      "base64_encode": 20,
+      "add_days": 16,
+      "aggregate_records": 16,
+      "base64_decode": 16,
+      "base64_encode": 16,
       "calculator": 40,
-      "calendar_create": 30,
-      "compound_interest": 24,
+      "calendar_add": 20,
+      "calendar_create": 40,
+      "compound_interest": 16,
       "convert_sum_prime": 30,
-      "convert_then_prime": 30,
+      "convert_then_prime": 31,
       "converter": 30,
-      "date_diff": 20,
-      "distance_between": 18,
-      "email": 29,
-      "encode_decode_roundtrip": 30,
-      "file_write_read": 34,
-      "filter_records": 20,
+      "currency_email": 24,
+      "date_diff": 16,
+      "distance_between": 24,
+      "distance_compare": 30,
+      "distance_trip_total": 30,
+      "email": 30,
+      "encode_decode_roundtrip": 16,
+      "file_write": 20,
+      "file_write_read": 48,
+      "filter_records": 16,
+      "hypotenuse": 23,
       "mix_k2": 80,
       "mix_k3": 80,
       "mix_k4": 70,
       "mix_k5": 60,
-      "percentile": 20,
+      "note_and_schedule": 24,
+      "percentile": 16,
       "prime_checker": 24,
-      "roman_numeral": 20,
-      "scientific_calculator": 24,
-      "stats": 24,
+      "prime_multi": 30,
+      "roman_numeral": 16,
+      "scientific_calculator": 21,
+      "stats": 16,
+      "stats_compare": 20,
+      "stats_multi": 110,
       "stats_prime_roman": 30,
-      "stock_price": 22,
-      "temperature_converter": 24,
-      "weather": 16,
-      "weather_compare": 20,
-      "weather_forecast": 21,
+      "stock_average": 30,
+      "stock_compare": 30,
+      "stock_multi": 61,
+      "stock_portfolio_value": 30,
+      "stock_price": 18,
+      "temperature_converter": 16,
+      "weather": 22,
+      "weather_compare": 24,
+      "weather_forecast": 16,
+      "weather_multi": 50,
+      "weather_rain_check": 24,
       "weather_stock_email": 30,
-      "word_count": 25
+      "weather_warmest": 30,
+      "word_count": 15
+    }
+  },
+  "dpo_pairs_per_template": {
+    "calculator": {
+      "cost": 60
+    },
+    "calendar_add": {
+      "cost": 30
+    },
+    "calendar_create": {
+      "cost": 62
+    },
+    "convert_sum_prime": {
+      "correctness": 40,
+      "cost": 93
+    },
+    "convert_then_prime": {
+      "correctness": 26,
+      "cost": 64
+    },
+    "converter": {
+      "correctness": 21,
+      "cost": 24
+    },
+    "currency_email": {
+      "cost": 36
+    },
+    "distance_between": {
+      "correctness": 19,
+      "cost": 15
+    },
+    "distance_compare": {
+      "cost": 34,
+      "correctness": 56
+    },
+    "distance_trip_total": {
+      "correctness": 49,
+      "cost": 83
+    },
+    "file_write": {
+      "cost": 29
+    },
+    "file_write_read": {
+      "cost": 54
+    },
+    "hypotenuse": {
+      "correctness": 37,
+      "cost": 37
+    },
+    "mix_k2": {
+      "cost": 79,
+      "correctness": 32
+    },
+    "mix_k3": {
+      "cost": 106,
+      "correctness": 62
+    },
+    "mix_k4": {
+      "cost": 131,
+      "correctness": 66
+    },
+    "mix_k5": {
+      "correctness": 65,
+      "cost": 139
+    },
+    "note_and_schedule": {
+      "cost": 72
+    },
+    "prime_checker": {
+      "cost": 21,
+      "correctness": 15
+    },
+    "prime_multi": {
+      "correctness": 66,
+      "cost": 54
+    },
+    "scientific_calculator": {
+      "correctness": 32,
+      "cost": 9
+    },
+    "stats": {
+      "cost": 24
+    },
+    "stats_compare": {
+      "cost": 60
+    },
+    "stats_multi": {
+      "cost": 165
+    },
+    "stats_prime_roman": {
+      "cost": 90
+    },
+    "stock_average": {
+      "cost": 90
+    },
+    "stock_compare": {
+      "cost": 45
+    },
+    "stock_multi": {
+      "cost": 90
+    },
+    "stock_portfolio_value": {
+      "cost": 90
+    },
+    "stock_price": {
+      "cost": 34
+    },
+    "weather": {
+      "cost": 32
+    },
+    "weather_compare": {
+      "cost": 36
+    },
+    "weather_multi": {
+      "cost": 75
+    },
+    "weather_rain_check": {
+      "cost": 36
+    },
+    "weather_stock_email": {
+      "cost": 90
+    },
+    "weather_warmest": {
+      "cost": 45
     }
   }
 }
