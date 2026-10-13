@@ -8,3 +8,4 @@ datasets
 peft
 bitsandbytes
 tensorboard
+trl
