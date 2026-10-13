@@ -6,25 +6,46 @@ two-stage benchmark harness with an LLM judge.
 
 ## Results
 
-First experiment: SFT on the original single-path dataset (26 tools, one valid path per task, no cost
-alternatives). 450 held-out test tasks, base model vs. LoRA fine-tuned:
+Dataset v1 (35 priced tools in 10 cost families, 7,680 tasks with several valid paths each). 500 held-out test tasks,
+scored by the LLM judge without manual correction. Cost metrics are over successful tasks and compare against each
+task's cheapest valid path.
 
-| | Base Qwen2.5-1.5B-Instruct | LoRA fine-tuned |
-|---|---|---|
-| Task success | 0% | **98.2%** |
-| Tool selection accuracy | 0.34 | **1.00** |
-| Argument accuracy | 0.37 | **0.99** |
-| Tool calls per task | 9.8 | 3.1 |
+| | Base Qwen2.5-1.5B-Instruct | SFT (A) | SFT + DPO (B) |
+|---|---|---|---|
+| Task success | 0% | **97.6%** | 92.6% |
+| Done at the cheapest cost | – | 48.8% | **66.3%** |
+| Cost above the cheapest path | – | 28.5% | **11.4%** |
+| Succeeded below the cheapest cost | – | 0% | 3.0% |
+| Tasks with a failed tool call | – | 1 | 40 |
+| Tool calls per task | 9.9 | 3.2 | 3.1 |
 
-The judge scored the fine-tuned model at 93.3%. Of its 30 rejected tasks, 22 had exactly the expected tool calls and
-answer and were judge errors (the judge prompt has since been fixed), giving 442/450 = 98.2%. The 8 real failures
-were reasoning over tool outputs (comparisons, rounding), misspelled entity names in arguments, and one transcription
-error.
+- **SFT** (random valid path per task, so cost-unaware) learns the tools and the format: 0% to 97.6% success.
+- **DPO** on scripted first-divergence pairs moves the model toward cheaper tools. On the 456 tasks both A and B solve,
+  average cost drops from 0.0407 to 0.0360, against a cheapest-path cost of 0.0323: B closes 56% of A's gap.
+- **But DPO costs 5 points of success.** B lost 32 tasks A solved and gained 7. Error analysis found two causes:
+  - *Imbalanced pairs.* Within some families one direction dominates (e.g. 279 pairs prefer `statistics` over
+    `describe_numbers`, 165 the reverse), and DPO learned the majority choice instead of the condition that decides
+    it. `stats_multi` went from 26/35 to 0/35 at the cheapest cost, `stock_price` from 7/7 to 0/7, and
+    `small_prime_checker` was called on numbers above its 9,999 limit 26 times.
+  - *No recovery after a failed call.* SFT demos never contain a failed call, so after a cheap tool fails B usually
+    guesses the answer instead of switching to the tool that works. 13 of the 14 "below the cheapest cost" successes
+    are lucky guesses on yes/no prime questions, made cheaper because failed calls are free. B's real success rate is
+    somewhat below 92.6%.
+- Next: balance pairs per family direction, add recovery pairs (after a failed cheap call, prefer the fallback tool
+  over a guessed `finish`), and report failed-call rates in the benchmark.
 
-Training: LoRA rank 16 on q/k/v/o projections (4.4M trainable parameters, 0.28%), ~10.7K step-level examples from
-3.5K tasks, 3 epochs, ~50 minutes on one H100.
+Training: LoRA rank 16 on q/k/v/o projections (4.4M trainable parameters, 0.28%), on one H100. SFT: 11.2K step-level
+examples from 3,757 tasks, 3 epochs, ~1.6 hours. DPO: 2,820 pairs (2,234 cost, 586 correctness), beta 0.1 plus a 0.2
+SFT term, lr 5e-6, 2 epochs, ~1 hour; eval preference accuracy 76%, still improving at the end.
 
 Test tasks are unseen, but come from the same templates and phrasings as the training tasks.
+
+### Earlier experiment
+
+SFT on the original single-path dataset (26 tools, one valid path per task, no cost alternatives), 450 test tasks:
+base 0% vs. fine-tuned **98.2%** success (tool selection accuracy 0.34 to 1.00, argument accuracy 0.37 to 0.99). The
+judge scored it 93.3%; 22 of its 30 rejections had exactly the expected calls and answer and were judge errors (the
+judge prompt has since been fixed).
 
 ## How it works
 
@@ -37,12 +58,14 @@ Test tasks are unseen, but come from the same templates and phrasings as the tra
   lists every valid path (the cheapest is `expected_actions`) and plausible failing cheap attempts.
 - **Data generation** (`scripts/generate_data.py`): validates every path, splits tasks four ways, and writes SFT
   demonstrations and scripted DPO preference pairs. See [Dataset generation](#dataset-generation).
-- **Training** (`scripts/train.py`): each trajectory becomes one example per step (task + history → next action),
+- **SFT** (`scripts/train_sft.py`): each trajectory becomes one example per step (task + history → next action),
   and only the action is trained on. `--demos random` (default) trains the cost-unaware SFT model; `--demos cheapest`
   trains the reference model on optimal paths.
+- **DPO** (`scripts/train_dpo.py`): continues an SFT run's adapter with TRL's DPOTrainer on the preference pairs,
+  with the frozen SFT adapter as the reference model.
 - **Benchmark** (`scripts/benchmark.py`): stage 1 runs the model on test tasks and saves final states (GPU, no
-  internet needed). Stage 2 scores them with a Gemini judge plus tool and argument accuracy, cost and latency. Both
-  stages resume after interruption.
+  internet needed). Stage 2 scores them with a Gemini judge plus tool and argument accuracy, cost, cost against the
+  cheapest valid path, and latency. Both stages resume after interruption.
 
 ### Cost families
 
@@ -188,16 +211,17 @@ echo "GEMINI_API_KEY=..." > .env    # only needed for benchmark stage 2 (the jud
 python -m scripts.generate_data
 
 # 2. Train a LoRA adapter on the latest version -> experiments/runs/<timestamp>_vN/
-python -m scripts.train                       # cost-unaware SFT (random-path demos); add --dataset v1 to pick a version
-python -m scripts.train --demos cheapest      # reference SFT on cheapest-path demos
+python -m scripts.train_sft                   # cost-unaware SFT (random-path demos); add --dataset v1 to pick a version
+python -m scripts.train_sft --demos cheapest  # reference SFT on cheapest-path demos
+
+# 2b. DPO on top of an SFT run, using its dataset's preference pairs -> experiments/runs/<timestamp>_vN_dpo/
+python -m scripts.train_dpo --sft-run experiments/runs/<sft run>
 
 # 3. Benchmark (use the same --limit for every model you compare)
-python -m scripts.benchmark --run experiments/runs/<run> --limit 450 --stage run        # model -> final states
-python -m scripts.benchmark --run experiments/runs/<run> --limit 450 --stage evaluate   # judge -> scores
-python -m scripts.benchmark --limit 450                                                  # base model, both stages
+python -m scripts.benchmark --run experiments/runs/<run> --limit 500 --stage run        # model -> final states
+python -m scripts.benchmark --run experiments/runs/<run> --limit 500 --stage evaluate   # judge -> scores
+python -m scripts.benchmark --limit 500                                                  # base model, both stages
 ```
-
-DPO training on `dpo_pairs.jsonl` is the next step and doesn't have a script yet.
 
 ## Outputs
 
@@ -210,11 +234,11 @@ datasets/vN/                            ~174 MB
   val_trajectories.jsonl  val_cheapest_trajectories.jsonl
   dpo_pairs.jsonl  dpo_val_pairs.jsonl  scripted DPO preference pairs
 
-experiments/runs/<timestamp>_vN[_cheapest]/
-  run_info.json                         dataset version, demos used, config, counts, best checkpoint
+experiments/runs/<timestamp>_vN[_cheapest|_dpo]/
+  run_info.json                         dataset version, demos used (or the SFT run, for DPO), config, counts
   adapter/                              best LoRA adapter (load with PeftModel.from_pretrained)
   checkpoint-*/
 
-experiments/benchmarks/<run name, or base>/<vN>_<n450|all>/
+experiments/benchmarks/<run name, or base>/<vN>_<n500|all>/
   info.json  states.jsonl  results.jsonl  summary.json
 ```
