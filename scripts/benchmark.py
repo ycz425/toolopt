@@ -27,7 +27,7 @@ from app.agents.agent import Agent
 from app.data.labeled_task import LabeledTask
 from app.data.versions import resolve_version_dir
 from app.environment.environment import Environment
-from app.evaluation.benchmark import evaluate_benchmark, run_benchmark, summarize
+from app.evaluation.benchmark import evaluate_benchmark, optimal_costs, run_benchmark, summarize
 from app.tools.executor import ToolExecutor
 from app.tools.registry_builder import build_registry
 from app.training.config import LoRATrainingConfig
@@ -104,13 +104,14 @@ async def main():
         print(f"Stage 2: evaluating {states_path}...")
         results = await evaluate_benchmark(labeled_tasks, states_path, results_path)
 
+        optimal_cost = optimal_costs(labeled_tasks)
         template_of = {t.task.task_id: t.template for t in labeled_tasks}
         by_template = defaultdict(list)
         for result in results:
             by_template[template_of[result.task_id]].append(result)
         summary = {
-            "summary": summarize(results),
-            "summary_by_template": {k: summarize(v) for k, v in sorted(by_template.items())},
+            "summary": summarize(results, optimal_cost),
+            "summary_by_template": {k: summarize(v, optimal_cost) for k, v in sorted(by_template.items())},
         }
         (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
         print(json.dumps(summary["summary"], indent=2))

@@ -5,9 +5,16 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 
 from app.agents.agent import Agent
+from app.data.generator import run_path
 from app.data.labeled_task import LabeledTask
+from app.environment.environment import Environment
 from app.environment.state import State
 from app.evaluation.metrics import argument_accuracy, num_tool_calls, task_success, tool_selection_accuracy, total_cost, total_latency
+from app.tools.executor import ToolExecutor
+from app.tools.registry_builder import build_registry
+
+# Prices are at least 0.001, so any real difference in cost is far above this; it only absorbs float rounding.
+_COST_TOL = 1e-6
 
 
 class TaskOutcome(BaseModel):
@@ -116,10 +123,29 @@ async def evaluate_benchmark(labeled_tasks: list[LabeledTask], states_path: Path
     return [r for r in load_results(results_path) if r.task_id in wanted]
 
 
-def summarize(results: list[BenchmarkResult]) -> dict:
+def optimal_costs(labeled_tasks: list[LabeledTask]) -> dict[str, float]:
+    """The cost of each task's cheapest valid path (expected_actions), found by replaying it in the environment, the
+    same way generate_data priced the paths."""
+    environment = Environment(build_registry(), ToolExecutor())
+    return {t.task.task_id: run_path(environment, t.task, t.expected_actions).total_cost for t in labeled_tasks}
+
+
+def _mean(values: list[float]) -> float | None:
+    return sum(values) / len(values) if values else None
+
+
+def summarize(results: list[BenchmarkResult], optimal_cost: dict[str, float]) -> dict:
+    """Overall metrics, plus cost efficiency against each task's cheapest valid path.
+
+    The cost metrics only count successful tasks: failed calls are free and a model that gives up early spends little,
+    so averaging over every task would reward failing. Read them alongside success_rate.
+    """
     n = len(results)
     if n == 0:
         return {}
+    successes = [r for r in results if r.success]
+    excess = [r.total_cost - optimal_cost[r.task_id] for r in successes]
+    excess_ratio = [r.total_cost / optimal_cost[r.task_id] - 1 for r in successes if optimal_cost[r.task_id] > 0]
     return {
         "num_tasks": n,
         "success_rate": sum(r.success for r in results) / n,
@@ -128,4 +154,14 @@ def summarize(results: list[BenchmarkResult]) -> dict:
         "avg_num_tool_calls": sum(r.num_tool_calls for r in results) / n,
         "avg_latency": sum(r.total_latency for r in results) / n,
         "avg_cost": sum(r.total_cost for r in results) / n,
+        # Cost efficiency, over successful tasks only.
+        "num_successful": len(successes),
+        "avg_cost_successful": _mean([r.total_cost for r in successes]),
+        "avg_optimal_cost_successful": _mean([optimal_cost[r.task_id] for r in successes]),
+        "optimal_cost_rate": _mean([float(abs(e) <= _COST_TOL) for e in excess]),
+        "avg_excess_cost": _mean(excess),
+        "avg_excess_cost_ratio": _mean(excess_ratio),
+        # Succeeding for less than the cheapest valid path means skipping a required step (e.g. not reading a file
+        # back) and the judge accepting the answer anyway: worth inspecting if it's ever above 0.
+        "below_optimal_rate": _mean([float(e < -_COST_TOL) for e in excess]),
     }
